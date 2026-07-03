@@ -288,10 +288,10 @@ The full loop, run from the repo root:
 6. **Push** — `git push origin main`. **The push IS the deploy.**
 7. **CI rebuilds + publishes** — `.github/workflows/pages.yml` fires on push to
    `main` (or manual `workflow_dispatch`). Build job (`ubuntu-latest`):
-   `checkout@v4` → `setup-python@v5` (3.12) → `pip install jinja2 pyyaml mistune
+   `checkout@v7` → `setup-python@v6` (3.12) → `pip install jinja2 pyyaml mistune
    markupsafe` → `python3 build.py` → `touch dist/.nojekyll` →
-   `upload-pages-artifact@v3` (path `dist`). Deploy job (`needs: build`):
-   `deploy-pages@v4` to the `github-pages` environment. Permissions
+   `upload-pages-artifact@v5` (path `dist`). Deploy job (`needs: build`):
+   `deploy-pages@v5` to the `github-pages` environment. Permissions
    `contents:read, pages:write, id-token:write`; concurrency
    `group: pages, cancel-in-progress: true` — **a newer push cancels an
    in-flight run; last push wins.**
