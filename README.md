@@ -2,6 +2,10 @@
 
 **Live:** https://macrl2.github.io/
 
+> **New here (human or agent)? Start with [`AGENTS.md`](AGENTS.md)** — a single
+> onboarding doc covering the build, authoring a chapter, adding an interactive
+> demo, verifying a change, and how the edit → deploy workflow behaves.
+
 A small, hand-built static site for an online textbook — ported from the
 visual style of the `~/PORTFOLIO` site (OKLCH paper-warm palette, system
 serif, light/dark theme, calm reading measure) and adapted for course
@@ -11,7 +15,8 @@ material that learners explore through interactive elements.
 
 - **`content/*.md`** — one Markdown file per page, with optional YAML
   front-matter (`title`, `description`, `nav_order`, `part`, `summary`,
-  `hide_from_toc`). `content/index.md` is the home page and table of contents.
+  `hide_from_toc`, `interactive`). `content/index.md` is the home page and table
+  of contents. Set `interactive: true` to load the demo kit + KaTeX on a page.
   Raw HTML is allowed in Markdown, so a chapter can embed any interactive
   widget inline.
 - **`templates/`** — `_layout.html.j2` (the shared frame: head, masthead,
