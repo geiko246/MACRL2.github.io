@@ -1,0 +1,19 @@
+{
+  "name": "workspace",
+  "version": "1.0.0",
+  "description": "A small, hand-built static site for an online textbook — ported from the visual style of the `~/PORTFOLIO` site (OKLCH paper-warm palette, system serif, light/dark theme, calm reading measure) and adapted for course material that learners explore through interactive elements.",
+  "directories": {
+    "doc": "docs",
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "node --test tests/",
+    "smoke": "node tests/browser/smoke.mjs"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "puppeteer": "^24.43.1"
+  }
+}

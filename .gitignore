@@ -3,13 +3,10 @@ dist/
 __pycache__/
 *.pyc
 .DS_Store
-# Node tooling used only for local smoke tests (not a runtime dependency).
+# Node tooling for browser smoke tests. The manifests (package.json,
+# package-lock.json) and harnesses (tests/browser/) are committed; only the
+# installed packages are not — run `npm install` to get puppeteer.
 node_modules/
-package.json
-package-lock.json
-
-# Local browser smoke scripts (need node_modules/puppeteer)
-tests/browser/
 
 # Generated chapter screenshots (regenerate via tests/browser/shot.mjs)
 cartpole-*.png

@@ -14,8 +14,9 @@ Claude-session behavior on top; it does not repeat AGENTS.md.
 - A new demo needs three names to match exactly: the file
   `static/demos/NAME.js`, the `data-demo="NAME"` attribute, and
   `window.Demos.register("NAME", …)`.
-- Verify with `node --test tests/` before deploying. `npm test` is a stub that
-  errors — don't use it.
+- Verify with `node --test tests/` (or `npm test`) before deploying. Browser
+  smokes live in `tests/browser/` — `npm install` once, then
+  `node tests/browser/smoke.mjs kit|chapter`.
 
 ## Deploy-when-done
 

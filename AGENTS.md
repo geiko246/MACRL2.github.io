@@ -57,6 +57,8 @@ Committed, project-relevant items:
 | `static/vendor/katex/` | Vendored KaTeX (css/js + `contrib/auto-render.min.js` + fonts). No CDN. Loaded only on interactive pages. |
 | `tests/*.test.mjs` | Committed Node unit tests (11 tests: `integrate`, `linalg`, `plot`, `cartpole-dynamics`). `node --test tests/`. |
 | `tests/manual/*.html` | Committed hand-open spot-check pages for `controls`, `diagram`, `plot`, `theme`, plus `kit.html` (the loader/mount check). No `sim.html`/`linalg.html`. |
+| `tests/browser/*.mjs` | Committed puppeteer smoke/screenshot harnesses (`smoke`, `live`, `shot`, `shot-page`). Need a one-time `npm install`. See "Verifying a change". |
+| `package.json`, `package-lock.json` | Declare + pin the puppeteer dev dependency for the browser harnesses. `npm test` → unit tests; `npm run smoke` → browser smoke. |
 | `docs/superpowers/` | Design spec + implementation plan + task tracker (all tasks complete). |
 | `.github/workflows/pages.yml` | CI deploy pipeline (build → Pages). |
 | `README.md`, `.gitignore` | Human overview; hygiene manifest. |
@@ -64,8 +66,7 @@ Committed, project-relevant items:
 **Not committed (gitignored — a fresh clone will *not* have these):**
 
 - `dist/` — build output; destroyed and recreated every build. Never edit or commit.
-- `node_modules/`, `package.json`, `package-lock.json` — local-only Node tooling (puppeteer). `npm test` is a stub that just errors — use `node --test tests/`.
-- `tests/browser/` — puppeteer smoke/screenshot harnesses used during development. **Not committed and there is no stash** — see "Verifying a change".
+- `node_modules/` — installed npm packages (puppeteer + its bundled Chromium). Run `npm install` to populate; never committed.
 - `cartpole-*.png` — generated screenshots. Regenerate, don't commit.
 
 ## How the build works
@@ -248,16 +249,25 @@ shared logic pure (no `window`/`document`/`getComputedStyle` at module top
 level) so it stays testable — refactor it into a `demo-kit` module and unit-test
 that.
 
-**Browser smoke — not committed.** Real-browser checks (does the demo mount and
-render?) were done during development with puppeteer harnesses under
-`tests/browser/`, but that directory is **gitignored and there is no stash or
-committed copy** — a fresh clone cannot run them. Treat `node --test tests/` as
-the only always-available gate. If you want browser verification, install
-puppeteer + a headless Chromium locally and write a harness that builds
-(`python3 build.py`) then loads `dist/<page>/index.html`, asserting demos mount
-(`.demo` gains child nodes), math renders (`.katex` present), and the console is
-error-free. `tests/manual/*.html` (committed) are hand-open spot-check pages for
-individual kit modules.
+**Browser smoke (committed).** Real-browser checks (do demos mount and render?)
+live in `tests/browser/`. They need puppeteer (+ its bundled headless Chromium);
+on Linux you may also need the usual Chromium shared libraries
+(`libnss3`, `libatk-1.0`, `libgbm1`, `libasound2`, …).
+
+```bash
+npm install                              # puppeteer, pinned in package-lock.json (+ Chromium)
+python3 build.py                         # dist/ must exist for the chapter/screenshot checks
+node tests/browser/smoke.mjs kit         # kit.js lazily mounts a demo; ctx has all 8 keys; 0 console errors
+node tests/browser/smoke.mjs chapter     # dist/02-cartpole: 4 demos, >=3 canvases, >=1 KaTeX span, 0 errors
+node tests/browser/live.mjs              # smoke the deployed prod chapter -> LIVE_OK / LIVE_FAIL
+node tests/browser/shot.mjs              # light+dark screenshots of the cart-pole chapter -> cartpole-*.png
+node tests/browser/shot-page.mjs <dist-path> <out-prefix>   # light+dark shots of any dist page
+```
+
+All harnesses launch headless Chromium with `--no-sandbox`. Shortcuts:
+`npm test` runs the unit tests, `npm run smoke` runs `smoke.mjs`.
+`tests/manual/*.html` (committed) are hand-open spot-check pages for individual
+kit modules.
 
 ## How the workflow behaves (edit → deploy)
 
@@ -321,9 +331,10 @@ root** — the org/user `*.github.io` root repo `MACRL2/MACRL2.github.io`
   `.demo` div but no `interactive: true` silently renders neither.
 - **`dist/` is destroyed every build** — never store anything precious there;
   never hand-edit or commit it.
-- **Verification tooling is not in the repo** — `tests/browser/`,
-  `node_modules/`, `package.json` are gitignored; a fresh clone has only the
-  committed `node --test tests/` unit tests.
+- **Browser tests need a one-time install** — `tests/browser/` and
+  `package.json`/`package-lock.json` are committed, but `node_modules/` is not;
+  run `npm install` once (pulls puppeteer + Chromium) before the browser smokes.
+  The `node --test tests/` unit tests need no install.
 - **`make watch`** needs the external `entr` binary (not a Python dep).
 
 ## Where to look next
