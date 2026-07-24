@@ -62,6 +62,31 @@ const CHECKS = {
     assert(katex >= 1, `expected KaTeX-rendered math, got ${katex}`);
     return `4 demos, ${canvases} canvases, ${katex} math spans`;
   },
+  // Verify the researcher journey page: the humanoid-balance demo mounts,
+  // renders a canvas, exposes its press controls, and drives without errors.
+  async researcher(page) {
+    await page.goto(`http://127.0.0.1:${PORT}/dist/researcher/index.html`, { waitUntil: 'networkidle0' });
+    await page.evaluate(async () => {
+      for (let y = 0; y <= document.body.scrollHeight; y += 300) {
+        window.scrollTo(0, y); await new Promise(r => setTimeout(r, 60));
+      }
+    });
+    await page.waitForSelector('.demo[data-demo="humanoid-balance"] canvas', { timeout: 5000 });
+    const buttons = await page.$$eval('.hb-btn', els => els.length);
+    const hasReadout = await page.$$eval('.hb-readout', els => els.length);
+    assert(buttons === 2, `expected 2 push buttons, got ${buttons}`);
+    assert(hasReadout === 1, `expected 1 readout, got ${hasReadout}`);
+    // Drive a press-and-release so the input path executes.
+    await page.evaluate(() => {
+      const b = document.querySelector('.hb-btn');
+      b.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
+      b.dispatchEvent(new PointerEvent('pointerup', { bubbles: true }));
+    });
+    await new Promise(r => setTimeout(r, 400));
+    const readout = await page.$eval('.hb-readout', el => el.textContent);
+    assert(/upright|fell/.test(readout), `unexpected readout: "${readout}"`);
+    return `humanoid-balance mounted; ${buttons} buttons; readout="${readout}"`;
+  },
 };
 
 function assert(cond, msg) { if (!cond) throw new Error(msg); }

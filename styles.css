@@ -583,6 +583,26 @@ a.journey-card:focus-visible {
 }
 .ctl-btn:hover { border-color: var(--accent); color: var(--accent); }
 
+/* Humanoid balance demo (Unit 1): press-and-hold controls under the stage */
+.hb-stage { width: 100%; }
+.hb-push {
+  display: flex; align-items: center; justify-content: center;
+  gap: 0.75rem; margin: 0.6rem 0 0.2rem; flex-wrap: wrap;
+}
+.hb-btn {
+  min-width: 6.5rem; padding: 0.55rem 0.9rem; font-size: 1rem;
+  touch-action: none; user-select: none; -webkit-user-select: none;
+}
+.hb-btn.is-on { border-color: var(--accent); color: var(--accent); }
+.hb-readout {
+  min-width: 11rem; text-align: center;
+  font-variant-numeric: tabular-nums; color: var(--fg-muted); font-size: 0.9rem;
+}
+@media (max-width: 480px) {
+  .hb-btn { min-width: 5rem; }
+  .hb-readout { min-width: 8rem; order: 3; flex-basis: 100%; }
+}
+
 /* Interactive SVG diagrams */
 .demo-diagram { position: relative; }
 .demo-diagram .diagram-tip {

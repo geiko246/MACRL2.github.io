@@ -41,10 +41,29 @@ the measured state, so the controller senses and reacts. This unit builds the
 core of classical control — state, stability, and state-feedback design — the
 foundation everything later stands on.
 
+But first, *be* the controller. Below is a humanoid modeled as a rigid body
+hinged at the ankle — the simplest honest model of standing balance. It starts
+to topple the moment you begin. Hold the push buttons (or the arrow keys) to
+apply an ankle torque and try to keep it upright.
+
+<div class="demo" data-demo="humanoid-balance"></div>
+
 <aside class="callout" data-kind="try">
-  <span class="callout-label">interactive — coming next</span>
-  <p>Balance the humanoid by hand; then watch an open-loop schedule fail under a
-  nudge, and a feedback law catch it.</p>
+  <span class="callout-label">try this</span>
+  <p>Keep it up for as long as you can, then let go and count the seconds before
+  it falls. Notice that upright is not somewhere the body <em>rests</em> — the
+  further it leans, the faster it goes. That runaway is what a feedback
+  controller has to fight, automatically, many times a second.</p>
+</aside>
+
+The next beat hands this job to a controller. We will start with the tempting
+shortcut — a fixed, pre-planned schedule of torques — and watch exactly how it
+fails.
+
+<aside class="callout" data-kind="note">
+  <span class="callout-label">coming next in this unit</span>
+  <p>An open-loop torque schedule you author yourself, and the disturbance that
+  breaks it — motivating feedback.</p>
 </aside>
 
 ## Unit 2 · Optimal control &amp; MPC
