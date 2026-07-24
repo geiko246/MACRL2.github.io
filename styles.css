@@ -583,28 +583,34 @@ a.journey-card:focus-visible {
 }
 .ctl-btn:hover { border-color: var(--accent); color: var(--accent); }
 
-/* Humanoid balance demo (Unit 1): press-and-hold controls under the stage */
+/* Humanoid balance demo (Unit 1): compact controls under the stage */
 .hb-stage { width: 100%; }
 .hb-stage:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 6px; }
-.hb-push {
+.hb-push, .hb-actions {
   display: flex; align-items: center; justify-content: center;
-  gap: 0.6rem; margin: 0.6rem 0 0.35rem; flex-wrap: wrap;
+  gap: 0.5rem; flex-wrap: wrap;
 }
-.hb-btn {
+.hb-push { margin: 0.5rem 0 0.3rem; }
+.hb-actions { margin: 0.1rem 0 0.15rem; }
+.hb-btn, .hb-actions .ctl-btn {
   display: inline-flex; align-items: center; gap: 0.4rem;
-  padding: 0.55rem 0.9rem; font-size: 0.95rem;
+  padding: 0.5rem 0.85rem; font-size: 0.95rem;
   touch-action: none; user-select: none; -webkit-user-select: none;
 }
 .hb-btn.is-on { border-color: var(--accent); color: var(--accent); background: var(--surface); }
-.hb-btn kbd {
+.hb-btn kbd, .hb-actions kbd {
   font: 0.72rem/1 var(--mono); color: var(--fg-muted);
   border: 1px solid var(--rule); border-radius: 4px; padding: 0.1rem 0.3rem;
 }
 .hb-readout {
-  display: block; text-align: center; margin: 0.1rem 0 0.2rem;
+  display: block; text-align: center; margin: 0.1rem 0;
   font-variant-numeric: tabular-nums; color: var(--fg-muted); font-size: 0.9rem;
 }
-@media (max-width: 480px) { .hb-btn { font-size: 0.85rem; padding: 0.5rem 0.6rem; } }
+/* tighten the slider stack (overrides .demo-controls defaults; later wins) */
+.hb-controls { gap: 0.35rem; margin-top: 0.3rem; }
+@media (max-width: 480px) {
+  .hb-btn, .hb-actions .ctl-btn { font-size: 0.85rem; padding: 0.45rem 0.55rem; }
+}
 
 /* Interactive SVG diagrams */
 .demo-diagram { position: relative; }
