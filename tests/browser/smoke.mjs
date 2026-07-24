@@ -76,12 +76,18 @@ const CHECKS = {
     const hasReadout = await page.$$eval('.hb-readout', els => els.length);
     assert(buttons === 2, `expected 2 push buttons, got ${buttons}`);
     assert(hasReadout === 1, `expected 1 readout, got ${hasReadout}`);
-    // Drive a press-and-release so the input path executes.
+    // Drive a press-and-release so the input path executes, then confirm the
+    // button press armed the keyboard (arrow keys work without clicking the figure).
     await page.evaluate(() => {
       const b = document.querySelector('.hb-btn');
       b.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
       b.dispatchEvent(new PointerEvent('pointerup', { bubbles: true }));
     });
+    const armed = await page.evaluate(() =>
+      document.activeElement === document.querySelector('.hb-stage'));
+    assert(armed, 'button press did not focus the stage (keyboard not armed)');
+    await page.keyboard.down('ArrowLeft');
+    await page.keyboard.up('ArrowLeft');
     await new Promise(r => setTimeout(r, 400));
     const readout = await page.$eval('.hb-readout', el => el.textContent);
     assert(/upright|fell/.test(readout), `unexpected readout: "${readout}"`);

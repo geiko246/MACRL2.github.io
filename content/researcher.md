@@ -9,117 +9,73 @@ hide_from_toc: true
 
 # Teaching a Humanoid to Stand
 
-Here is a body with joints — ankles, knees, hips — and gravity pulling on every
-one of them. It wants to fall. Across this journey we keep it upright, then keep
-it upright under pressure, then let it teach *itself* to stay up. The humanoid
-never changes; what changes is the sophistication of the loop keeping it
-standing.
-
-Each unit below is motivated the same way: the previous approach hits a wall —
-a disturbance it can't see, a constraint it can't respect, a model it doesn't
-have, an objective it can't name — and the next unit is the tool that gets past
-it.
-
-<aside class="callout" data-kind="note">
-  <span class="callout-label">the four units</span>
-  <p><strong>Feedback control</strong> → <strong>optimal control &amp; MPC</strong>
-  → <strong>reinforcement learning</strong> → <strong>imitation learning &amp;
-  IRL</strong>. Each is introduced through the humanoid, and each earns its place
-  by fixing where the one before it breaks.</p>
-</aside>
-
-## Unit 1 · Feedback control
-
-Start by getting a feel for the problem: keep the body upright by hand, and
-discover that "upright" is not a place the body rests — it is a place it runs
-*away* from. Lean a little and the lean accelerates. That is an **unstable
-equilibrium**, and it is why doing nothing is never an option.
-
-A fixed, pre-planned schedule of torques won't survive a single nudge, because
-it never looks at the body. The fix is **feedback**: make the torques depend on
-the measured state, so the controller senses and reacts. This unit builds the
-core of classical control — state, stability, and state-feedback design — the
-foundation everything later stands on.
-
-But first, *be* the controller. Below is a humanoid modeled as a rigid body
-hinged at the ankle — the simplest honest model of standing balance. It starts
-to topple the moment you begin. Hold the push buttons (or the arrow keys) to
-apply an ankle torque and try to keep it upright.
+Keep it upright. Hold **◀ push** / **push ▶**, or use your arrow keys.
 
 <div class="demo" data-demo="humanoid-balance"></div>
 
-<aside class="callout" data-kind="try">
-  <span class="callout-label">try this</span>
-  <p>Keep it up for as long as you can, then let go and count the seconds before
-  it falls. Notice that upright is not somewhere the body <em>rests</em> — the
-  further it leans, the faster it goes. That runaway is what a feedback
-  controller has to fight, automatically, many times a second.</p>
-</aside>
+It fights you because upright isn't where the body rests — it's where it runs
+*away* from: the further it leans, the faster it falls. Holding it up means
+watching the lean and pushing back, a few times a second. That loop is
+**feedback control**, and you just ran it by hand.
 
-The next beat hands this job to a controller. We will start with the tempting
-shortcut — a fixed, pre-planned schedule of torques — and watch exactly how it
-fails.
+The rest of this journey automates that loop, then rebuilds it four times — each
+unit taking over exactly where the last one breaks.
+
+## Unit 1 · Feedback control
+
+The tempting shortcut is a fixed, pre-planned schedule of torques. It can't do
+what you just did — it never looks at the body, so one nudge ends it. Feedback
+makes the torque depend on the measured state: sense, then react. This unit
+builds the core of classical control — state, stability, and state-feedback
+design.
 
 <aside class="callout" data-kind="note">
   <span class="callout-label">coming next in this unit</span>
-  <p>An open-loop torque schedule you author yourself, and the disturbance that
-  breaks it — motivating feedback.</p>
+  <p>Author an open-loop torque schedule, watch a disturbance break it, then add
+  feedback and watch it recover.</p>
 </aside>
 
 ## Unit 2 · Optimal control &amp; MPC
 
-Feedback that holds near upright is still ad hoc: which gains, and why? And it
-has no way to *plan* — to get up off the floor, or to hold a load level with no
-margin to spare, the controller has to look ahead and respect real limits.
-
-Give it a **model** and a **cost**, and control becomes optimization: choose the
-torques that minimize cost over a horizon. That is optimal control — the
-linear-quadratic regulator as the clean closed-form case, and **model predictive
-control** when constraints and nonlinearity mean you re-solve the plan at every
+Feedback that holds near upright is still ad hoc — which gains, and why? And it
+can't plan: to rise from the floor, or hold a load with no margin, the
+controller must look ahead and respect real limits. Give it a model and a cost
+and control becomes optimization — the linear-quadratic regulator in closed
+form, and **model predictive control** when constraints force a replan every
 step.
 
 <aside class="callout" data-kind="try">
-  <span class="callout-label">interactive — coming next</span>
-  <p>Shape a cost, watch the optimal controller trade off effort against
-  accuracy, and see MPC replan against constraints in real time.</p>
+  <span class="callout-label">interactive — coming</span>
+  <p>Shape a cost and watch the optimal controller trade effort against accuracy;
+  watch MPC replan against constraints in real time.</p>
 </aside>
 
 ## Unit 3 · Reinforcement learning
 
-Optimal control assumes you *have* the model — the masses, the contact, the
-friction. On a real humanoid you don't, and small errors compound. So drop the
-model and let the body improve by *trying*: run a policy, measure a reward, keep
-what worked.
-
-This unit builds up from the crudest possible learner to policy-gradient
-methods — a policy, a reward, and a loop that improves one from the other. It is
-the same balancing problem, now solved from experience instead of equations.
+Optimal control assumes you *have* the model. On a real humanoid you don't. So
+drop it and let the body improve by trying: run a policy, measure a reward, keep
+what worked — from the crudest search up to policy-gradient methods.
 
 <aside class="callout" data-kind="try">
-  <span class="callout-label">interactive — coming next</span>
+  <span class="callout-label">interactive — coming</span>
   <p>Watch a policy that does nothing teach itself to balance, one episode at a
   time, as the return climbs.</p>
 </aside>
 
 ## Unit 4 · Imitation learning &amp; IRL
 
-Reinforcement learning needs a reward, and for anything lifelike — a natural
-gait, a graceful recovery — a good reward is painfully hard to write down. But
-we can *show* the behavior.
-
-**Imitation learning** trains a policy directly from demonstrations;
-**inverse reinforcement learning** goes further and infers the objective itself
-from an expert, so the humanoid can generalize the *intent* rather than copy the
-motion. This closes the journey: from hand-tuned feedback to a controller that
-learns not just how to act, but what it is trying to do.
+A reward for anything lifelike — a natural gait, a graceful recovery — is
+painfully hard to write. So show it instead. **Imitation learning** trains from
+demonstrations; **inverse RL** infers the objective itself, so the humanoid
+generalizes the intent rather than copying the motion.
 
 <aside class="callout" data-kind="try">
-  <span class="callout-label">interactive — coming next</span>
+  <span class="callout-label">interactive — coming</span>
   <p>Demonstrate a motion, train a policy to imitate it, then recover the reward
-  that explains the demonstration and watch it generalize.</p>
+  that explains it and watch it generalize.</p>
 </aside>
 
 ---
 
-*This page is the spine of the researcher journey. The interactive humanoid and
-the worked mathematics for each unit land next.*
+*The interactive humanoid and the worked mathematics for each unit continue from
+here.*

@@ -133,6 +133,9 @@ function mount(el, params, ctx) {
     const dir = +btn.dataset.dir;
     btn.addEventListener('pointerdown', (e) => {
       e.preventDefault();
+      // Arm the keyboard the moment the reader engages the buttons, so the
+      // arrow keys work without first having to click the figure itself.
+      stage.focus({ preventScroll: true });
       if (fallen) return;
       setInput(dir * opts.push);
       btns.forEach((b2) => b2.classList.remove('is-on'));
