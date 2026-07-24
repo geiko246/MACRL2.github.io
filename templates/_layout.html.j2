@@ -1,7 +1,7 @@
 {# Base layout shared by every page. The generated *.html files in dist/ are
    built from this by build.py and must NOT be hand-edited. #}
 <!doctype html>
-<html lang="en" data-build="{{ build_fp }}">
+<html lang="en" data-build="{{ build_fp }}" data-base="{{ base }}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -19,7 +19,7 @@
     } catch (e) {}
   })();
 </script>
-<link rel="stylesheet" href="/styles.css?v={{ css_version }}">
+<link rel="stylesheet" href="{{ base }}/styles.css?v={{ css_version }}">
 <script>
   // Pick a random emoji from the pool (site.yaml `favicons:`) on each load and
   // render it as an inline-SVG favicon: no asset files, no extra requests.
@@ -38,9 +38,9 @@
 </script>
 {% if page.interactive %}
 <!-- Interactive demo kit (loaded only on chapters that opt in). -->
-<link rel="stylesheet" href="/static/vendor/katex/katex.min.css">
-<script defer src="/static/vendor/katex/katex.min.js"></script>
-<script defer src="/static/vendor/katex/contrib/auto-render.min.js"></script>
+<link rel="stylesheet" href="{{ base }}/static/vendor/katex/katex.min.css">
+<script defer src="{{ base }}/static/vendor/katex/katex.min.js"></script>
+<script defer src="{{ base }}/static/vendor/katex/contrib/auto-render.min.js"></script>
 <script>
   window.addEventListener('DOMContentLoaded', function () {
     if (window.renderMathInElement) renderMathInElement(document.body, {
@@ -54,7 +54,7 @@
     });
   });
 </script>
-<script type="module" src="/static/demo-kit/kit.js?v={{ build_fp }}"></script>
+<script type="module" src="{{ base }}/static/demo-kit/kit.js?v={{ build_fp }}"></script>
 {% endif %}
 </head>
 <body>
@@ -64,7 +64,7 @@
   <header class="masthead">
     {% if site.eyebrow %}<p class="eyebrow">{{ site.eyebrow }}</p>{% endif %}
     <div class="identity-head">
-      <h1><a class="name-link" href="/" title="{{ site.title }}">{{ site.title }}</a></h1>
+      <h1><a class="name-link" href="{{ base }}/" title="{{ site.title }}">{{ site.title }}</a></h1>
       <button class="head-tool theme-toggle" type="button" aria-label="Switch to dark theme" title="Toggle light / dark theme">
         <svg class="icon-moon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <path d="M21 12.8A8.5 8.5 0 1 1 11.2 3a6.6 6.6 0 0 0 9.8 9.8z"/>

@@ -30,6 +30,11 @@ jobs:
       - name: Install build dependencies
         run: pip install jinja2 pyyaml mistune markupsafe
       - name: Build site
+        # Served from project pages at geiko246.github.io/MACRL2.github.io/, so
+        # build with that path prefix. Clear BASE_URL (or set to "") if this repo
+        # is renamed to a *.github.io user site or given a root custom domain.
+        env:
+          BASE_URL: /MACRL2.github.io
         run: python3 build.py
       - name: Disable Jekyll processing
         run: touch dist/.nojekyll

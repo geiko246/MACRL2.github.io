@@ -7,7 +7,7 @@
 {% block description %}{{ page.description or site.description }}{% endblock %}
 
 {% block topbar %}
-  {% if not page.is_home %}<p class="backlink"><a href="/">← contents</a></p>{% endif %}
+  {% if not page.is_home %}<p class="backlink"><a href="{{ base }}/">← contents</a></p>{% endif %}
 {% endblock %}
 
 {% block content %}
@@ -29,7 +29,7 @@
           <li class="toc-item">
             <span class="toc-num">{{ "%02d"|format(ch.index) }}</span>
             <span>
-              <a class="toc-link" href="{{ ch.url }}">{{ ch.title }}</a>
+              <a class="toc-link" href="{{ base }}{{ ch.url }}">{{ ch.title }}</a>
               {% if ch.summary %}<p class="toc-summary">{{ ch.summary }}</p>{% endif %}
             </span>
           </li>
@@ -40,10 +40,10 @@
   {% else %}
   <nav class="chapter-nav">
     {% if prev_pg %}
-      <a class="nav-prev" href="{{ prev_pg.url }}"><span class="nav-dir">← previous</span><span class="nav-title">{{ prev_pg.title }}</span></a>
+      <a class="nav-prev" href="{{ base }}{{ prev_pg.url }}"><span class="nav-dir">← previous</span><span class="nav-title">{{ prev_pg.title }}</span></a>
     {% else %}<span></span>{% endif %}
     {% if nxt_pg %}
-      <a class="nav-next" href="{{ nxt_pg.url }}"><span class="nav-dir">next →</span><span class="nav-title">{{ nxt_pg.title }}</span></a>
+      <a class="nav-next" href="{{ base }}{{ nxt_pg.url }}"><span class="nav-dir">next →</span><span class="nav-title">{{ nxt_pg.title }}</span></a>
     {% else %}<span></span>{% endif %}
   </nav>
   {% endif %}

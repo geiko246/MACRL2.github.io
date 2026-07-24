@@ -307,13 +307,18 @@ user asks*, you actually run commit/push on the user's request — a standing
 "deploy when you're done" request satisfies that. In practice: keep the change
 deploy-ready, and deploy it as the closing step.
 
-**Root-site constraint.** Every generated asset path is absolute
-(`/styles.css`, `/static/…`), so the site must be served from a **domain
-root** — the org/user `*.github.io` root repo `MACRL2/MACRL2.github.io`
-(`origin`), Pages **Source: GitHub Actions**. A project subpath
-(`user.github.io/project/`) would break every asset link. Keep the
-`touch dist/.nojekyll` step (so `_`-prefixed paths survive) and keep
-`id-token:write` (required by the OIDC deploy action).
+**Root-site constraint (and the base-path escape hatch).** Generated asset
+paths are absolute (`/styles.css`, `/static/…`), so by default the site must be
+served from a **domain root** — the org/user `*.github.io` root repo
+`MACRL2/MACRL2.github.io` (`origin`), Pages **Source: GitHub Actions**. To serve
+from a **project subpath** instead (e.g. a fork at
+`user.github.io/<repo>/`), set a base path: `base_url` in `site.yaml`, or the
+`BASE_URL` env var (which overrides it — CI sets it in `pages.yml`). `build.py`
+then prefixes every asset link, nav/in-content link, the demo-kit loader, and
+the demo-to-demo imports with it; `""` (the default) preserves root serving, so
+local `make serve` needs no change. Keep the `touch dist/.nojekyll` step (so
+`_`-prefixed paths survive) and keep `id-token:write` (required by the OIDC
+deploy action).
 
 ## Gotchas
 

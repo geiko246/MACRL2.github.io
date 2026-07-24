@@ -15,6 +15,13 @@ description: "An online textbook with interactive elements discovered as you pro
 # Footer attribution line.
 footer: "An Interactive Textbook"
 
+# URL path prefix the site is served under. Leave "" when serving from a domain
+# root (a *.github.io user/org site, or a custom domain). Set to "/<repo>" when
+# serving from GitHub project pages (e.g. geiko246.github.io/MACRL2.github.io/).
+# The BASE_URL environment variable overrides this at build time — CI sets it in
+# .github/workflows/pages.yml, so local `make serve` stays at root by default.
+base_url: ""
+
 # Favicon pool: a random one renders as an inline-SVG emoji favicon on every
 # page load (see the head script in templates/_layout.html.j2). Emoji that
 # stay legible at ~16px work best.

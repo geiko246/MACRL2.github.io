@@ -35,6 +35,7 @@ Run
 from __future__ import annotations
 
 import hashlib
+import os
 import re
 import shutil
 from pathlib import Path
@@ -90,7 +91,34 @@ def load_site() -> dict:
     site.setdefault("description", site["title"])
     site.setdefault("favicons", DEFAULT_FAVICONS)
     site.setdefault("footer", site["title"])
+    site.setdefault("base_url", "")
     return site
+
+
+def resolve_base(site: dict) -> str:
+    """The URL path prefix the site is served under, '' for a domain root.
+
+    Precedence: the BASE_URL env var (a per-deploy override, e.g. set by CI for
+    project-pages served at /<repo>/) then site.yaml `base_url`. Normalized to
+    '' or '/prefix' (leading slash, no trailing slash) so it composes cleanly
+    with the absolute '/...' paths used everywhere else.
+    """
+    raw = os.environ.get("BASE_URL")
+    if raw is None:
+        raw = site.get("base_url", "")
+    raw = (raw or "").strip().rstrip("/")
+    if raw and not raw.startswith("/"):
+        raw = "/" + raw
+    return raw
+
+
+def prefix_abs_paths(html: str, base: str) -> str:
+    """Prefix root-absolute href/src values (`="/..."`, not `="//..."`) with the
+    base path, so authored in-content links and images resolve under a subpath.
+    A no-op when base is ''."""
+    if not base:
+        return html
+    return re.sub(r'(href|src)="/(?!/)', rf'\1="{base}/', html)
 
 
 def discover_pages() -> list[dict]:
@@ -130,8 +158,14 @@ def build_toc(pages: list[dict]) -> list[dict]:
 
 def render() -> None:
     site = load_site()
+    base = resolve_base(site)
     pages = discover_pages()
     toc = build_toc(pages)
+
+    # Resolve in-content absolute links/images against the base path (no-op at root).
+    if base:
+        for page in pages:
+            page["body_html"] = Markup(prefix_abs_paths(str(page["body_html"]), base))
 
     css_bytes = STYLES_SRC.read_bytes()
     css_version = _short_hash(css_bytes)
@@ -157,6 +191,14 @@ def render() -> None:
         # never ship in a production build.
         shutil.copytree(STATIC_DIR, OUT_DIR / "static", dirs_exist_ok=True,
                         ignore=shutil.ignore_patterns("_*"))
+        # The demo loader and demo-to-demo imports use absolute '/static/...'
+        # paths; rewrite them in the shipped copies so demos resolve under a
+        # base path too. Scoped to the JS that actually contains them (no-op at
+        # root); source files are untouched, so Node unit tests are unaffected.
+        if base:
+            for sub in ("demo-kit", "demos"):
+                for js in (OUT_DIR / "static" / sub).rglob("*.js"):
+                    js.write_text(js.read_text().replace("/static/", f"{base}/static/"))
 
     page_tmpl = env.get_template("page.html.j2")
     for i, page in enumerate(toc):
@@ -179,6 +221,7 @@ def render() -> None:
             favicons=site["favicons"],
             css_version=css_version,
             build_fp=build_fp,
+            base=base,
         )
         out_path = OUT_DIR / page["out_name"]
         out_path.parent.mkdir(parents=True, exist_ok=True)
