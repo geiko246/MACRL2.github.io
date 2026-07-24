@@ -74,7 +74,7 @@ const CHECKS = {
     await page.waitForSelector('.demo[data-demo="humanoid-balance"] canvas', { timeout: 5000 });
     const buttons = await page.$$eval('.hb-btn', els => els.length);
     const hasReadout = await page.$$eval('.hb-readout', els => els.length);
-    assert(buttons === 2, `expected 2 push buttons, got ${buttons}`);
+    assert(buttons === 4, `expected 4 control buttons, got ${buttons}`);
     assert(hasReadout === 1, `expected 1 readout, got ${hasReadout}`);
     // Drive a press-and-release so the input path executes, then confirm the
     // button press armed the keyboard (arrow keys work without clicking the figure).

@@ -1,178 +1,192 @@
-// humanoid-balance.js — Unit 1 (feedback control), first beat: balance a humanoid
-// BY HAND. The body is a rigid inverted pendulum hinged at the ankle (the
-// classic single-link "ankle strategy" model of standing balance). The reader
-// is the controller: press-and-hold the buttons (or arrow keys) to apply an
-// ankle torque and feel how quickly upright runs away.
+// humanoid-balance.js — Unit 1 (feedback control), first beat: keep a planar
+// biped standing BY HAND. A rigid trunk balances on two length-actuated legs
+// that make ground contact; the reader contracts either leg (like a muscle) and
+// torques the trunk. The dynamics live in the pure, unit-tested sibling module.
+import { PARAMS, standingState, deriv, pose } from '/static/demos/humanoid-dynamics.js';
 
 function mount(el, params, ctx) {
   const { Anim, Controls, Theme } = ctx;
 
-  // --- physics constants (a rigid uniform body pivoting at the ankle) --------
-  const m = 1;            // body mass
-  const g = 9.81;         // gravity
-  const L = 2.0;          // body height (ankle -> head), metres
-  const I = (1 / 3) * m * L * L;   // moment of inertia about the ankle
-  const b = 0.02;         // tiny joint damping
+  const p = { ...PARAMS };
+  // reader-tunable feel
+  const opts = {
+    betaDeg: PARAMS.beta * 180 / Math.PI,
+    dContract: PARAMS.dContract,
+    tau: PARAMS.tau,
+  };
+  const active = { legL: false, legR: false, torL: false, torR: false };
+  let fallen = false, uprightTime = 0, lastTs = null;
 
-  // push strength (ankle torque magnitude, N·m) is reader-tunable
-  const opts = { push: params && params.push ? +params.push : 7 };
+  function buildInput() {
+    return {
+      targetL: active.legL ? p.l0 - opts.dContract : p.l0,
+      targetR: active.legR ? p.l0 - opts.dContract : p.l0,
+      tau: (active.torL ? opts.tau : 0) + (active.torR ? -opts.tau : 0),
+    };
+  }
 
-  let input = 0;          // current ankle torque applied by the reader
-  let fallen = false;     // true once the body has toppled past recovery
-  let uprightTime = 0;    // seconds kept from falling since the last reset
-  let lastTs = null;      // wall-clock stamp for the upright timer
-
-  // state = [theta, thetaDot]; theta measured from vertical, +right.
-  function deriv(s) {
-    if (fallen) return [0, 0];                 // freeze once toppled
-    const th = s[0], w = s[1];
-    const gravityTorque = m * g * (L / 2) * Math.sin(th);   // destabilising
-    const thddot = (gravityTorque + input - b * w) / I;
-    return [w, thddot];
+  function freshState() {
+    p.beta = opts.betaDeg * Math.PI / 180;
+    const s = standingState(p);
+    s[4] = 0.03;            // a slight initial lean so it starts to topple
+    return s;
   }
 
   el.innerHTML =
-    '<div class="hb-stage" style="height:280px">' +
+    '<div class="hb-stage" style="height:300px">' +
     '<canvas style="width:100%;height:100%;display:block;touch-action:none"></canvas></div>' +
     '<div class="hb-push">' +
-    '<button class="ctl-btn hb-btn" type="button" data-dir="-1" aria-label="push left">◀ push</button>' +
-    '<output class="hb-readout" aria-live="off"></output>' +
-    '<button class="ctl-btn hb-btn" type="button" data-dir="1" aria-label="push right">push ▶</button>' +
-    '</div><div class="hb-controls"></div>';
+    '<button class="ctl-btn hb-btn" type="button" data-flag="legL">left leg <kbd>A</kbd></button>' +
+    '<button class="ctl-btn hb-btn" type="button" data-flag="torL">torso <kbd>←</kbd></button>' +
+    '<button class="ctl-btn hb-btn" type="button" data-flag="torR">torso <kbd>→</kbd></button>' +
+    '<button class="ctl-btn hb-btn" type="button" data-flag="legR"><kbd>D</kbd> right leg</button>' +
+    '</div><output class="hb-readout" aria-live="off"></output>' +
+    '<div class="hb-controls"></div>';
 
   const stage = el.querySelector('.hb-stage');
   const canvas = el.querySelector('canvas');
   const out = el.querySelector('.hb-readout');
 
-  // --- drawing: a stick humanoid rotating rigidly about the ankle -----------
-  // Landmarks are axial distances up the body from the ankle at (0,0); `w` is a
-  // lateral offset. up = (sinθ, cosθ); right-perp = (cosθ, -sinθ).
+  // --- drawing --------------------------------------------------------------
   function draw(gg, s) {
     const t = Theme.tokens();
     gg.fit();
-    gg.setWorld({ x0: -1.6, x1: 1.6, y0: -0.4, y1: 2.4 });
+    gg.setWorld({ x0: -1.7, x1: 1.7, y0: -0.3, y1: 2.5 });
     gg.clear();
     const c = gg.ctx;
-    const th = s[0];
-    const P = (d, w = 0) => [
-      gg.sx(d * Math.sin(th) + w * Math.cos(th)),
-      gg.sy(d * Math.cos(th) - w * Math.sin(th)),
-    ];
+    const S = (pt) => [gg.sx(pt.x), gg.sy(pt.y)];
+    const g0 = pose(s, p);
 
     // ground
     const groundY = gg.sy(0);
     c.strokeStyle = t.rule; c.lineWidth = gg.px(1.5);
-    c.beginPath(); c.moveTo(gg.sx(-1.6), groundY); c.lineTo(gg.sx(1.6), groundY); c.stroke();
-
-    // faint upright reference
+    c.beginPath(); c.moveTo(gg.sx(-1.7), groundY); c.lineTo(gg.sx(1.7), groundY); c.stroke();
+    // faint upright reference through the feet centre
     c.save();
     c.strokeStyle = t.faint; c.lineWidth = gg.px(1); c.setLineDash([gg.px(4), gg.px(5)]);
-    c.beginPath(); c.moveTo(gg.sx(0), groundY); c.lineTo(gg.sx(0), gg.sy(L * 0.98)); c.stroke();
+    c.beginPath(); c.moveTo(gg.sx(0), groundY); c.lineTo(gg.sx(0), gg.sy(2.1)); c.stroke();
     c.restore();
 
-    const col = fallen ? t.muted : t.accent;
-    c.strokeStyle = col; c.fillStyle = col;
-    c.lineWidth = gg.px(6); c.lineCap = 'round'; c.lineJoin = 'round';
+    const base = fallen ? t.muted : t.accent;
+    c.lineCap = 'round'; c.lineJoin = 'round';
+    const seg = (a, b, w, col) => {
+      c.strokeStyle = col; c.lineWidth = gg.px(w);
+      const A = S(a), B = S(b);
+      c.beginPath(); c.moveTo(A[0], A[1]); c.lineTo(B[0], B[1]); c.stroke();
+    };
 
-    const seg = (a, bb) => { c.beginPath(); c.moveTo(a[0], a[1]); c.lineTo(bb[0], bb[1]); c.stroke(); };
-    // legs: hip -> two feet
-    seg(P(0.95, 0.12), P(0.0, 0.20));
-    seg(P(0.95, -0.12), P(0.0, -0.20));
-    // torso: hip -> shoulder
-    seg(P(0.95, 0), P(1.6, 0));
-    // arms: shoulder -> two hands (hanging slightly forward)
-    seg(P(1.6, 0), P(1.15, 0.30));
-    seg(P(1.6, 0), P(1.15, -0.30));
-    // head
-    const head = P(1.87, 0);
-    c.beginPath(); c.arc(head[0], head[1], gg.px(16), 0, Math.PI * 2); c.fill();
+    // legs (hip -> knee -> foot); a contracting leg is drawn brighter/heavier
+    g0.legs.forEach((leg, i) => {
+      const engaged = !fallen && (i === 0 ? active.legL : active.legR);
+      const col = engaged ? t.fg : base;
+      seg(g0.hip, leg.knee, engaged ? 7 : 5, col);
+      seg(leg.knee, leg.foot, engaged ? 7 : 5, col);
+      // foot bar; highlighted while in ground contact
+      const fx = leg.foot.x, fy = Math.max(leg.foot.y, 0);
+      seg({ x: fx - 0.13, y: fy }, { x: fx + 0.13, y: fy }, 4, leg.contact ? t.fg : base);
+    });
 
-    // active-push indicator: a short arc at the ankle
-    if (input !== 0 && !fallen) {
-      c.save();
+    // trunk + head + arms
+    seg(g0.hip, g0.shoulder, 8, base);
+    const right = { x: g0.up.y, y: -g0.up.x };       // trunk-right unit
+    const hand = (sgn) => ({
+      x: g0.shoulder.x + right.x * 0.32 * sgn - g0.up.x * 0.22,
+      y: g0.shoulder.y + right.y * 0.32 * sgn - g0.up.y * 0.22,
+    });
+    seg(g0.shoulder, hand(1), 4, base);
+    seg(g0.shoulder, hand(-1), 4, base);
+    const H = S(g0.head);
+    c.fillStyle = base; c.beginPath(); c.arc(H[0], H[1], gg.px(15), 0, Math.PI * 2); c.fill();
+
+    // trunk-torque indicator: an arc near the shoulders
+    const inTau = (active.torL ? opts.tau : 0) + (active.torR ? -opts.tau : 0);
+    if (inTau !== 0 && !fallen) {
+      const Sh = S(g0.shoulder), r = gg.px(24), dir = Math.sign(inTau);
       c.strokeStyle = t.fg; c.lineWidth = gg.px(2.5);
-      const r = gg.px(26), dir = Math.sign(input);
       c.beginPath();
-      c.arc(gg.sx(0), groundY, r, -0.35 * Math.PI, 0.35 * Math.PI, dir < 0);
+      c.arc(Sh[0], Sh[1], r, -0.4 * Math.PI, 0.4 * Math.PI, dir > 0);
       c.stroke();
-      c.restore();
     }
   }
 
   const anim = Anim({
-    state: [0.05, 0], deriv, dt: 0.01, integrator: 'rk4',
-    canvas, draw, autoplay: true,
+    state: freshState(),
+    deriv: (s) => (fallen ? [0, 0, 0, 0, 0, 0, 0, 0] : deriv(s, buildInput(), p)),
+    dt: 0.004, integrator: 'rk4', canvas, draw, autoplay: true,
   });
 
   function render() {
-    const th = anim.state[0];
-    const deg = th * 180 / Math.PI;
+    const phi = anim.state[4];
+    const deg = -phi * 180 / Math.PI;   // report lean as +right for the reader
     out.textContent = fallen
       ? 'fell — press reset'
-      : `upright ${uprightTime.toFixed(1)}s · ${deg >= 0 ? '+' : ''}${deg.toFixed(0)}°`;
+      : `upright ${uprightTime.toFixed(1)}s · lean ${deg >= 0 ? '+' : ''}${deg.toFixed(0)}°`;
   }
 
   anim.on('tick', (s) => {
     const now = (typeof performance !== 'undefined' ? performance.now() : 0);
     if (lastTs != null && !fallen) uprightTime += (now - lastTs) / 1000;
     lastTs = now;
-    if (!fallen && Math.abs(s[0]) > 1.35) {
-      fallen = true; input = 0;
-      // Pause after this frame settles (pausing mid-tick is undone by Anim's
-      // own reschedule), to stop the loop once the body is down.
+    if (!fallen && (Math.abs(s[4]) > 1.25 || s[2] < 0.55)) {
+      fallen = true;
+      for (const k in active) active[k] = false;
       setTimeout(() => anim.pause(), 0);
     }
     render();
   });
 
-  // --- reader input: press-and-hold buttons + arrow keys --------------------
-  function setInput(v) { input = fallen ? 0 : v; render(); }
+  // --- reader input: hold-to-actuate buttons + keys -------------------------
   const btns = [...el.querySelectorAll('.hb-btn')];
-  const release = () => { setInput(0); btns.forEach((b2) => b2.classList.remove('is-on')); };
+  const setFlag = (flag, on) => {
+    if (fallen) return;
+    active[flag] = on;
+    const b = btns.find((x) => x.dataset.flag === flag);
+    if (b) b.classList.toggle('is-on', on);
+  };
   btns.forEach((btn) => {
-    const dir = +btn.dataset.dir;
+    const flag = btn.dataset.flag;
     btn.addEventListener('pointerdown', (e) => {
       e.preventDefault();
-      // Arm the keyboard the moment the reader engages the buttons, so the
-      // arrow keys work without first having to click the figure itself.
-      stage.focus({ preventScroll: true });
-      if (fallen) return;
-      setInput(dir * opts.push);
-      btns.forEach((b2) => b2.classList.remove('is-on'));
-      btn.classList.add('is-on');
+      stage.focus({ preventScroll: true });   // arm the keyboard on first touch
+      setFlag(flag, true);
     });
-    btn.addEventListener('pointerup', release);
-    btn.addEventListener('pointerleave', release);
-    btn.addEventListener('pointercancel', release);
+    const up = () => setFlag(flag, false);
+    btn.addEventListener('pointerup', up);
+    btn.addEventListener('pointerleave', up);
+    btn.addEventListener('pointercancel', up);
   });
 
+  const KEYMAP = { a: 'legL', A: 'legL', d: 'legR', D: 'legR',
+    ArrowLeft: 'torL', ArrowRight: 'torR' };
   stage.tabIndex = 0;
-  const keydown = (e) => {
-    if (e.key === 'ArrowLeft' || e.key === 'a') { e.preventDefault(); setInput(-opts.push); }
-    else if (e.key === 'ArrowRight' || e.key === 'd') { e.preventDefault(); setInput(opts.push); }
-  };
-  const keyup = (e) => {
-    if (['ArrowLeft', 'ArrowRight', 'a', 'd'].includes(e.key)) setInput(0);
-  };
+  const keydown = (e) => { const f = KEYMAP[e.key]; if (f) { e.preventDefault(); setFlag(f, true); } };
+  const keyup = (e) => { const f = KEYMAP[e.key]; if (f) setFlag(f, false); };
   stage.addEventListener('keydown', keydown);
   stage.addEventListener('keyup', keyup);
 
-  // --- control panel --------------------------------------------------------
-  function doPlay() { if (fallen) return; lastTs = null; anim.play(); }
-  function doPause() { anim.pause(); lastTs = null; }
+  // --- control panel (play/pause/reset also focus the stage) ----------------
+  const focusStage = () => stage.focus({ preventScroll: true });
+  function doPlay() { if (fallen) return; lastTs = null; anim.play(); focusStage(); }
+  function doPause() { anim.pause(); lastTs = null; focusStage(); }
   function doReset() {
-    fallen = false; input = 0; uprightTime = 0; lastTs = null;
-    anim.reset();       // back to the initial slight tilt
-    render(); doPlay();
+    fallen = false; uprightTime = 0; lastTs = null;
+    for (const k in active) active[k] = false;
+    btns.forEach((b) => b.classList.remove('is-on'));
+    anim.state = freshState();
+    anim.redraw(); render(); doPlay();
   }
 
   Controls(el.querySelector('.hb-controls'), [
     { type: 'button', label: 'play', onClick: doPlay },
     { type: 'button', label: 'pause', onClick: doPause },
     { type: 'button', label: 'reset', onClick: doReset },
-    { type: 'slider', key: 'push', min: 2, max: 14, step: 1, value: opts.push,
-      label: 'push strength', unit: 'N·m', dp: 0 },
-  ], opts);
+    { type: 'slider', key: 'betaDeg', min: 6, max: 30, step: 1, value: opts.betaDeg,
+      label: 'stance width', unit: '°', dp: 0 },
+    { type: 'slider', key: 'dContract', min: 0.15, max: 0.5, step: 0.01, value: opts.dContract,
+      label: 'contract depth', unit: 'm', dp: 2 },
+    { type: 'slider', key: 'tau', min: 2, max: 12, step: 0.5, value: opts.tau,
+      label: 'torso torque', unit: 'N·m', dp: 1 },
+  ], opts, (key) => { if (key === 'betaDeg') p.beta = opts.betaDeg * Math.PI / 180; });
 
   const off = Theme.onChange(() => anim.redraw());
   render();
