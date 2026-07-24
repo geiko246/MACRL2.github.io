@@ -90,7 +90,7 @@ const CHECKS = {
     await page.keyboard.up('ArrowLeft');
     await new Promise(r => setTimeout(r, 400));
     const readout = await page.$eval('.hb-readout', el => el.textContent);
-    assert(/upright|fell/.test(readout), `unexpected readout: "${readout}"`);
+    assert(/forward|fell/.test(readout), `unexpected readout: "${readout}"`);
     return `humanoid-balance mounted; ${buttons} buttons; readout="${readout}"`;
   },
 };

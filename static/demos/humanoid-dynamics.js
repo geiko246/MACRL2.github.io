@@ -20,13 +20,15 @@ export const PARAMS = {
   a: 0.5,        // hip distance below the CoM (metres)
   l0: 0.9,       // natural (straight) leg length
   dContract: 0.35, // how much a leg shortens when fully contracted
-  beta: 0.30,    // leg splay half-angle (rad); larger = wider, steadier stance
+  beta: 0.34,    // leg splay half-angle (rad); larger = wider, steadier stance
   kLen: 9.0,     // muscle speed: how fast a leg approaches its target length
   kG: 1400,      // ground contact stiffness (penalty spring)
   cG: 70,        // ground contact damping
   cF: 90,        // tangential (friction) damping at the foot
-  mu: 1.1,       // friction coefficient (bounds tangential force by mu*N)
+  kF: 1600,      // tangential stiffness pinning a planted foot to its anchor
+  mu: 1.4,       // friction coefficient (bounds tangential force by mu*N)
   tau: 6.0,      // trunk torque magnitude when a torso control is held
+  liftThresh: 0.02, // a foot this far above ground counts as lifted (released)
 };
 
 // The resting stand: symmetric, upright, legs straight, feet just settled into
@@ -38,8 +40,9 @@ export function standingState(p = PARAMS) {
 }
 
 // One leg's world geometry + ground reaction. Returns positions (for drawing)
-// and the force it applies to the trunk.
-function legForce(s, p, gamma, target, lIdx) {
+// and the force it applies to the trunk. `anchor` is the foot's planted x
+// position (null when the foot is free), which pins it for push-off and stepping.
+function legForce(s, p, gamma, target, lIdx, anchor) {
   const [x, xd, y, yd, phi, w] = s;
   const l = s[lIdx];
   const ld = p.kLen * (target - l);                // muscle length rate
@@ -60,7 +63,10 @@ function legForce(s, p, gamma, target, lIdx) {
     N = p.kG * (-footy) - p.cG * footvy;
     if (N < 0) N = 0;
     const fMax = p.mu * N;
+    // tangential force: velocity damping, plus a spring to the planted anchor
+    // (static friction) so the foot grips for push-off instead of sliding.
     f = -p.cF * footvx;
+    if (anchor != null) f -= p.kF * (footx - anchor);
     if (f > fMax) f = fMax; else if (f < -fMax) f = -fMax;
   }
   return { ld, footx, footy, N, f };
@@ -68,8 +74,8 @@ function legForce(s, p, gamma, target, lIdx) {
 
 export function deriv(s, input, p = PARAMS) {
   const [x, , y, , phi] = s;
-  const L = legForce(s, p, -p.beta, input.targetL, 6);
-  const R = legForce(s, p, p.beta, input.targetR, 7);
+  const L = legForce(s, p, -p.beta, input.targetL, 6, input.anchorL);
+  const R = legForce(s, p, p.beta, input.targetR, 7, input.anchorR);
 
   let Fx = 0, Fy = -p.m * p.g, Tz = input.tau || 0;
   for (const leg of [L, R]) {
@@ -114,4 +120,21 @@ export function pose(s, p = PARAMS) {
   const shoulder = { x: x + up.x * (p.a * 0.9), y: y + up.y * (p.a * 0.9) };
   const head = { x: x + up.x * (p.a * 1.5), y: y + up.y * (p.a * 1.5) };
   return { com: { x, y }, hip, shoulder, head, up, legs };
+}
+
+// World foot positions [{x,y},{x,y}] for the left, right leg.
+export function footPositions(s, p = PARAMS) {
+  return pose(s, p).legs.map((leg) => leg.foot);
+}
+
+// Advance the per-foot ground anchors: a foot that touches down (and has no
+// anchor) grips where it lands; a foot lifted clear of the ground releases.
+// `anchors` is [xL|null, xR|null]; returns the updated pair. Pure.
+export function stepAnchors(anchors, s, p = PARAMS) {
+  const feet = footPositions(s, p);
+  return feet.map((foot, i) => {
+    if (foot.y > p.liftThresh) return null;         // lifted -> released
+    if (foot.y <= 0 && anchors[i] == null) return foot.x; // touchdown -> grip
+    return anchors[i];                              // hold current anchor
+  });
 }

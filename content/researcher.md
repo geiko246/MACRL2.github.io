@@ -9,16 +9,16 @@ hide_from_toc: true
 
 # Teaching a Humanoid to Stand
 
-Keep it standing. Contract a leg to drop that side, torque the trunk to
-counter — buttons, or **A** / **D** and **←** / **→**.
+Walk it forward. Contract a leg to unweight and push off, torque the trunk to
+stay over your feet — buttons, or **A** / **D** and **←** / **→**. Get as far as
+you can before it falls.
 
 <div class="demo" data-demo="humanoid-balance"></div>
 
 It fights you because upright isn't where the body rests — it's where it runs
-*away* from: the further it leans, the faster it falls, and every joint you move
-sets off another. Holding it up means watching the whole body and correcting a
-few times a second. That loop is **feedback control**, and you just ran it by
-hand.
+*away* from, and every step is a small controlled fall you have to catch. Making
+forward progress means watching the whole body and correcting a few times a
+second. That loop is **feedback control**, and you just ran it by hand.
 
 The rest of this journey automates that loop, then rebuilds it four times — each
 unit taking over exactly where the last one breaks.
