@@ -5,6 +5,7 @@ nav_order: 1
 part: "Part I — Foundations"
 summary: One small system that carries the whole arc of the book — classical control, then learning.
 interactive: true
+hide_from_toc: true
 ---
 
 # Balancing on a Knife's Edge

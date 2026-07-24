@@ -16,25 +16,27 @@
   </article>
 
   {% if page.is_home %}
-  <section class="contents">
-    <h2>contents</h2>
-    {% set ns = namespace(part=None) %}
-    <ol class="toc">
-      {% for ch in toc %}
-        {% if ch.part and ch.part != ns.part %}
-          {% set ns.part = ch.part %}
-          <li class="toc-part">{{ ch.part }}</li>
-        {% endif %}
-        <li class="toc-item">
-          <span class="toc-num">{{ "%02d"|format(ch.index) }}</span>
-          <span>
-            <a class="toc-link" href="{{ ch.url }}">{{ ch.title }}</a>
-            {% if ch.summary %}<p class="toc-summary">{{ ch.summary }}</p>{% endif %}
-          </span>
-        </li>
-      {% endfor %}
-    </ol>
-  </section>
+    {% if toc %}
+    <section class="contents">
+      <h2>contents</h2>
+      {% set ns = namespace(part=None) %}
+      <ol class="toc">
+        {% for ch in toc %}
+          {% if ch.part and ch.part != ns.part %}
+            {% set ns.part = ch.part %}
+            <li class="toc-part">{{ ch.part }}</li>
+          {% endif %}
+          <li class="toc-item">
+            <span class="toc-num">{{ "%02d"|format(ch.index) }}</span>
+            <span>
+              <a class="toc-link" href="{{ ch.url }}">{{ ch.title }}</a>
+              {% if ch.summary %}<p class="toc-summary">{{ ch.summary }}</p>{% endif %}
+            </span>
+          </li>
+        {% endfor %}
+      </ol>
+    </section>
+    {% endif %}
   {% else %}
   <nav class="chapter-nav">
     {% if prev_pg %}
