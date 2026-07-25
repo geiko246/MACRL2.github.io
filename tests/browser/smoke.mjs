@@ -91,7 +91,12 @@ const CHECKS = {
     await new Promise(r => setTimeout(r, 400));
     const readout = await page.$eval('.hb-readout', el => el.textContent);
     assert(/forward|fell/.test(readout), `unexpected readout: "${readout}"`);
-    return `humanoid-balance mounted; ${buttons} buttons; readout="${readout}"`;
+    // The demo sits in a full-height hero; lesson blocks reveal on scroll.
+    const hero = await page.$$eval('.journey-hero', els => els.length);
+    const revealed = await page.$$eval('.reveal.is-visible', els => els.length);
+    assert(hero === 1, `expected 1 hero, got ${hero}`);
+    assert(revealed > 0, `expected scroll-revealed lesson blocks, got ${revealed}`);
+    return `humanoid-balance mounted; ${buttons} buttons; hero+${revealed} revealed; readout="${readout}"`;
   },
 };
 

@@ -81,3 +81,41 @@ generalizes the intent rather than copying the motion.
 
 *The interactive humanoid and the worked mathematics for each unit continue from
 here.*
+
+<script>
+  // Progressive enhancement: make the demo the landing screen, then reveal the
+  // lesson blocks as they scroll into view. With JS off, everything just shows.
+  (function () {
+    var art = document.querySelector('.page-content');
+    if (!art) return;
+    var demo = art.querySelector('.demo');
+    if (!demo) return;
+
+    // Move everything from the top through the demo into a full-height hero.
+    var hero = document.createElement('section');
+    hero.className = 'journey-hero';
+    var node = art.firstChild, batch = [];
+    while (node) { batch.push(node); if (node === demo) break; node = node.nextSibling; }
+    batch.forEach(function (n) { hero.appendChild(n); });
+    art.insertBefore(hero, art.firstChild);
+
+    var cue = document.createElement('div');
+    cue.className = 'hero-cue';
+    cue.setAttribute('aria-hidden', 'true');
+    cue.textContent = '↓';
+    hero.appendChild(cue);
+
+    var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduce || !('IntersectionObserver' in window)) return;
+
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (e.isIntersecting) { e.target.classList.add('is-visible'); io.unobserve(e.target); }
+      });
+    }, { rootMargin: '0px 0px -12% 0px' });
+
+    for (var sib = hero.nextElementSibling; sib; sib = sib.nextElementSibling) {
+      if (sib.tagName !== 'SCRIPT') { sib.classList.add('reveal'); io.observe(sib); }
+    }
+  })();
+</script>

@@ -612,6 +612,34 @@ a.journey-card:focus-visible {
   .hb-btn, .hb-actions .ctl-btn { font-size: 0.85rem; padding: 0.45rem 0.55rem; }
 }
 
+/* Journey page: first screen is the demo (hero); lesson text reveals on scroll.
+   The .journey-hero / .reveal classes are applied by a small in-page script, so
+   with JS off everything renders as an ordinary, fully-visible page. */
+.journey-hero {
+  min-height: calc(100svh - 9rem);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  position: relative;
+}
+.journey-hero > :first-child { margin-top: 0; }
+.hero-cue {
+  position: absolute; left: 50%; bottom: 0.4rem; transform: translateX(-50%);
+  color: var(--fg-faint); font-size: 1.35rem; line-height: 1;
+  animation: hero-bounce 1.8s ease-in-out infinite;
+}
+@keyframes hero-bounce {
+  0%, 100% { transform: translate(-50%, 0); }
+  50% { transform: translate(-50%, 7px); }
+}
+.reveal {
+  opacity: 0;
+  transform: translateY(18px);
+  transition: opacity 0.6s ease, transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: opacity, transform;
+}
+.reveal.is-visible { opacity: 1; transform: none; }
+
 /* Interactive SVG diagrams */
 .demo-diagram { position: relative; }
 .demo-diagram .diagram-tip {
